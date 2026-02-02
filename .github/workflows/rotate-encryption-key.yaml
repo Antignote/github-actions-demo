@@ -1,0 +1,41 @@
+name: Rotate Encryption Key
+
+on:
+  schedule:
+    # Runs at 3pm (15:00) on the second Monday of every month (days 8-14)
+    - cron: '0 15 8-14 * 1'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  rotate-key:
+    name: Rotate NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+    runs-on: ubuntu-latest
+    # permissions:
+    #   contents: read
+    #   secrets: write
+    
+    steps:
+      - name: Generate new encryption key
+        id: generate-key
+        run: |
+          NEW_KEY=$(openssl rand -base64 32)
+          echo "key=$NEW_KEY" >> $GITHUB_OUTPUT
+          echo "✅ Generated new encryption key"
+      
+      - name: Set repository secret
+        uses: .github/actions/set-secret@main
+        with:
+          secret_name: NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+          secret_value: ${{ steps.generate-key.outputs.key }}
+          repository: ${{ github.repository }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Summary
+        run: |
+          echo "## 🔐 Encryption Key Rotated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Successfully rotated \`NEXT_SERVER_ACTIONS_ENCRYPTION_KEY\` at $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY

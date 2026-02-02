@@ -1,0 +1,31 @@
+name: Set Repository Secret
+description: Sets or updates a repository secret using GitHub CLI
+
+inputs:
+  secret_name:
+    description: Name of the secret to set
+    required: true
+  secret_value:
+    description: Value of the secret
+    required: true
+  repository:
+    description: Repository in format owner/repo
+    required: false
+    default: ${{ github.repository }}
+  github_token:
+    description: GitHub token with repo and admin:org permissions
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set secret
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+      run: |
+        echo "Setting secret ${{ inputs.secret_name }} in repository ${{ inputs.repository }}"
+        echo "${{ inputs.secret_value }}" | gh secret set "${{ inputs.secret_name }}" \
+          --repo "${{ inputs.repository }}" \
+          --body -
+        echo "✅ Secret ${{ inputs.secret_name }} has been set successfully"
